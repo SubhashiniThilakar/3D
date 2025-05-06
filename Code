@@ -1,0 +1,82 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn.decomposition import PCA
+file_path =  r'lion.csv'   # Replace with your actual file path
+df = pd.read_csv(file_path, header=None, names=['X', 'Y', 'Z'])
+pca = PCA(n_components=3)
+transformed_points = pca.fit_transform(df[['X', 'Y', 'Z']])
+df['X'], df['Y'], df['Z'] = transformed_points[:, 0], transformed_points[:, 1], transformed_points[:, 2]
+X, Y, Z = df['X'].values, df['Y'].values, df['Z'].values
+num_points = len(df)
+triangles = []
+for i in range(0, num_points - 2, 3):  
+    if i + 2 < num_points:
+        triangles.append([i, i + 1, i + 2])
+
+triangles = np.array(triangles)
+
+ 
+def compute_circumcenter(A, B, C):
+    # Compute midpoints
+    AB = (A + B) / 2
+    BC = (B + C) / 2
+    CA = (C + A) / 2
+
+ 
+    normal = np.cross(B - A, C - A)
+    normal = normal / np.linalg.norm(normal)  # Normalize
+
+     
+    circumcenter = (AB + BC + CA) / 3  # Approximation
+    return circumcenter
+
+ 
+circumcenters = np.array([compute_circumcenter(df.iloc[t[0]].values, 
+                                               df.iloc[t[1]].values, 
+                                               df.iloc[t[2]].values) for t in triangles])
+
+ 
+fig = plt.figure(figsize=(10, 7))
+ax = fig.add_subplot(111, projection='3d')
+
+ 
+ax.plot_trisurf(X, Y, Z, triangles=triangles, cmap='magma', edgecolor='black', linewidth=0.4, alpha=1.0)
+
+ 
+ax.scatter(circumcenters[:, 0], circumcenters[:, 1], circumcenters[:, 2], 
+           color='red', marker='x', s=20, label="Circumcenters")
+
+ 
+ax.view_init(elev=70, azim=270)  # Further rotated for better alignment
+
+ 
+ax.invert_zaxis()
+
+ 
+ax.set_xlim(-0.2, 0.4)  # Expand X range
+ax.set_ylim(-0.2, 0.4)  # Expand Y range
+ax.set_zlim(-0.2, 0.3)  # Expand Z range
+
+ 
+ax.set_box_aspect([1, 1, 1])
+
+ 
+ax.set_xlabel("X-axis")
+ax.set_ylabel("Y-axis")
+ax.set_zlabel("Z-axis")
+ax.set_title("Rotated 3D Lion Projection")
+
+ 
+ax.xaxis.pane.set_visible(False)
+ax.yaxis.pane.set_visible(False)
+ax.zaxis.pane.set_visible(False)
+
+ax.grid(True)   
+
+ 
+ax.legend()
+
+ 
+plt.show()
